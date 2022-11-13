@@ -33,7 +33,7 @@ data_log %>% head
 data_log %>% str
 data_log_tibble <- data_log %>% mutate('date' = data$date[-1], .before = AAPL) %>% as_tibble()
 
-setwd('C:/Users/edyta/Desktop/GitHub_repozytorium/files_to_add_to_repo')
+setwd('C:/Users/edyta/Desktop/GitHub/repos/copula_modelling')
 source('plot_indexes.R')
 
 indexes_plot(data, 'level')
