@@ -35,7 +35,8 @@ data_log %>% head
 data_log %>% str
 data_log_tibble <- data_log %>% mutate('date' = data$date[-1], .before = AAPL) %>% as_tibble()
 
-setwd('C:/Users/edyta/Desktop/GitHub/repos/copula_modelling')
+main_github_path <- 'C:/Users/edyta/Desktop/GitHub/repos/copula_modelling'
+setwd(main_github_path)
 source('plot_indexes.R')
 
 # plot time series, correlation matrices & histograms for indexes
