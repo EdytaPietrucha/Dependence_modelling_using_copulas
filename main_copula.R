@@ -7,6 +7,8 @@ library(tidyr)
 library(GGally)
 library(xts)
 library(tidyverse)
+library(MASS)
+library(xtable)
 
 # to modelling we will use an interval period of 8 years which ends with 2022-08-23  
 last_observed_day <- as.Date("2022-08-23")
@@ -36,9 +38,13 @@ data_log_tibble <- data_log %>% mutate('date' = data$date[-1], .before = AAPL) %
 setwd('C:/Users/edyta/Desktop/GitHub/repos/copula_modelling')
 source('plot_indexes.R')
 
+# plot time series, correlation matrices & histograms for indexes
 indexes_plot(data, 'level')
 indexes_plot(data_log_tibble, 'increment')
 plot_corr_matrix(data_log, 'pearson')
 plot_corr_matrix(data_log, 'spearman')
 plot_corr_matrix(data_log, 'kendall')
 plot_hist(data_log)
+
+# fitting marginals distributions
+source('fitting_marginals.R')
