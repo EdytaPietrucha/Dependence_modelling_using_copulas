@@ -49,3 +49,5 @@ plot_hist(data_log)
 
 # fitting marginals distributions
 source('fitting_marginals.R')
+# plot fitted marginals distributions
+source('plot_fitted_marginals.R')
