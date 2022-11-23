@@ -11,7 +11,7 @@ library(MASS)
 library(xtable)
 
 # to modelling we will use an interval period of 8 years which ends with 2022-08-23  
-last_observed_day <- as.Date("2022-08-23")
+last_observed_day <- as.Date("2022-08-24")
 first_observed_day <- last_observed_day %m+% years(-8)
 
 # let's define a ticker labels for indexes used in project 
@@ -51,3 +51,5 @@ plot_hist(data_log)
 source('fitting_marginals.R')
 # plot fitted marginals distributions
 source('plot_fitted_marginals.R')
+# fit elliptical and archimedean copulas to data
+# source('ellipt_archimed_copula_fitting.R')
