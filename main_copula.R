@@ -9,6 +9,7 @@ library(xts)
 library(tidyverse)
 library(MASS)
 library(xtable)
+library(copula)
 
 # to modelling we will use an interval period of 8 years which ends with 2022-08-23  
 last_observed_day <- as.Date("2022-08-24")
@@ -35,6 +36,11 @@ data_log %>% head
 data_log %>% str
 data_log_tibble <- data_log %>% mutate('date' = data$date[-1], .before = AAPL) %>% as_tibble()
 
+# correlation matrixes
+pearson_log <- cor(data_log, method = 'pearson')
+spearman_log <- cor(data_log, method = 'spearman')
+kendall_log <- cor(data_log, method = 'kendall')
+
 main_github_path <- 'C:/Users/edyta/Desktop/GitHub/repos/copula_modelling'
 setwd(main_github_path)
 source('plot_indexes.R')
@@ -51,5 +57,10 @@ plot_hist(data_log)
 source('fitting_marginals.R')
 # plot fitted marginals distributions
 source('plot_fitted_marginals.R')
+# fitted parameters in final type used to copula calibration
+
 # fit elliptical and archimedean copulas to data
 # source('ellipt_archimed_copula_fitting.R')
+
+# File with calibrated copulas and random sapmling from copulas and correlation matrixes plots
+source('sample_from_calibrated_ellipt_archimed_copulas.R')
