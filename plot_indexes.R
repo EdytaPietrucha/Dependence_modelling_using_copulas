@@ -18,7 +18,7 @@ my_style <-  theme_classic(base_size = basic_size - 6) + theme(legend.position =
     legend.background = element_rect(fill = "white"),
     panel.grid.major = element_line(color=NA),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "white"))
+    panel.background = element_rect(fill = "white")) 
 
 #### PLOT TIME SERIES ####
 # please, customize your time series plot type: type \in c('level', 'increment')
@@ -58,20 +58,14 @@ plot_corr_matrix <- function(data, cor_method){
                       TRUE, FALSE))
   
   # creating title name for plots
-  title_name <- ''
-  if (cor_method == 'pearson') {
-    title_name <- 'Pearson correlation matrix'
-  } else if (cor_method == 'kendall') {
-    title_name <- 'Kendall correlation matrix'
-  } else if (cor_method == 'spearman') {
-    title_name <- 'Spearman correlation matrix'
-  }
+  title_name <- paste0(str_to_title(cor_method), ' correlation matrix')
   # making plot
-  ggpairs(data,
+  plt <- ggpairs(data,
           upper = list(continuous = wrap('cor', method = cor_method, size = 6, col = 'black')),
           lower = list(combo = wrap("points", bins = 30, size = 7)),
           diag = list(continuous = wrap("densityDiag", alpha = 0.5)),
           title = title_name) + my_style
+  return(plt)
 }
 
 #### PLOT HISTOGRAM ####
@@ -82,8 +76,9 @@ plot_hist <- function(data) {
   my_style_hist <- my_style + theme(axis.title.x = element_blank(), 
                                     axis.title.y = element_blank())
   
-  ggplot(gather(data_log), aes(value)) + 
+  plt <- ggplot(gather(data_log), aes(value)) + 
     geom_histogram(aes(y=..density..), bins = 50) + 
     facet_wrap(~key, scales = 'free_x') + my_style_hist + 
     labs(title = title_name) 
+  return(plt)
 }
