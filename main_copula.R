@@ -10,6 +10,8 @@ library(tidyverse)
 library(MASS)
 library(xtable)
 library(copula)
+library(rvinecopulib)
+library(e1071)
 
 # to modelling we will use an interval period of 8 years which ends with 2022-08-23  
 last_observed_day <- as.Date("2022-08-24")
