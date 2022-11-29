@@ -25,5 +25,6 @@ dvine_output %>% print
 setwd(main_github_path)
 write.csv(dvine_output$structure, "dvine_structure.csv")
 write.csv(dvine_output$LogLik, "dvine_loglik.csv")
-# select final dvine structure based on loglik value
+# select final dvine structure based on loglik value and saving as csv
 dvine_final_struc <- dvine_output$structure[[which.max(new)]]
+write.csv(dvine_final_struc, 'dvine_final_structure.csv')
