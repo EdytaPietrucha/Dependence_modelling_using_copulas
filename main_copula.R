@@ -64,5 +64,8 @@ source('plot_fitted_marginals.R')
 # fit elliptical and archimedean copulas to data
 # source('ellipt_archimed_copula_fitting.R')
 
-# File with calibrated copulas and random sapmling from copulas and correlation matrixes plots
+# File with calibrated copulas and random sampling from copulas and correlation matrices plots
 source('sample_from_calibrated_ellipt_archimed_copulas.R')
+
+# fit vine copulas to data - c-vine, d-vine and r-vine structures under consideration
+# source('vines_copula_fitting.R')
