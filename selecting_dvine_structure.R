@@ -1,5 +1,4 @@
 dvine_name <- c('dvine_object', 'LogLik', 'structure')
-family <- c('archimedean', 'elliptical')
 n <- 20 # number of simulations
 
 dvine_output <- lapply(dvine_name, 

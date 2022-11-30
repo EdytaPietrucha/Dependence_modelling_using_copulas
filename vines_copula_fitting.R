@@ -1,5 +1,8 @@
 # fitting vines copulas
 set.seed(127)
+# select vine copula parameters used in model calibration 
+family <- c('archimedean', 'elliptical')
+model_crit <- 'loglik'
 # C-vine structure - methodology is based on assumption that main root for each edge
 # corresponds to variable which has the highest value of sum from Spearman correlation matrix with all variables
 correlation_matrix <- spearman_log
@@ -23,7 +26,7 @@ vine_structures <-  list('dvine' = dvine_struc,
 fits_vines = lapply(vine_structures,
                     function(x) vinecop(pseudo_data, structure = x, keep_data = TRUE, 
                                         family_set = family, 
-                                        selcrit = 'loglik', tree_crit = 'rho', par_method = 'mle')
+                                        selcrit = model_crit, tree_crit = 'rho', par_method = 'mle')
 )
 fits_vines %>% print()
 
