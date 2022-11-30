@@ -66,7 +66,7 @@ location <- fit_params[if_else((fit_params %>% rownames() == 'm') %>% sum == 1, 
 scale <- fit_params[grepl('^s+', fit_params %>% row.names()) %>% which(),]
   
 for (i in 1:copula_dim){
-  sampling_from_copula[,i] <- sampling_from_copula[,i]*scale[i] + location[i]
+  sampling_from_copula[,i] <- rt(sampling_from_copula[,i], df = fit_params['df',i])*scale[i] + location[i]
 }
 
 sampling_from_copula <- sampling_from_copula %>% as.data.frame()
