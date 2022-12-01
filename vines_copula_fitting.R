@@ -11,7 +11,8 @@ cvine_struc <- cvine_structure(correlation_matrix %>% colSums() %>% order())
 # and should be inseparably next to each other - to pick up the best structure of indexes an investiagation has been conducted
 #  NOT RUN!
 # source('selecting_dvine_structure.R')
-dvine_final_struc <- read_csv('dvine_final_structure.csv') 
+dvine_final_struc <- read_csv('dvine_final_structure.csv')
+setwd(main_github_path)
 dvine_final_struc <- dvine_final_struc %>% dplyr::select(x) %>% unlist() %>% as.numeric()
 dvine_struc <- dvine_structure(dvine_final_struc)
 # structure based  on Dissman's structure selection algorithm (https://cran.r-project.org/web/packages/rvinecopulib/rvinecopulib.pdf page 31)

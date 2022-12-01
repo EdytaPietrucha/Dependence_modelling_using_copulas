@@ -21,7 +21,7 @@ for (i in 1:n) {
 }
 dvine_output %>% print
 # saving results as csv file
-setwd(main_github_path)
+setwd(paste0(main_github_path, '/output'))
 write.csv(dvine_output$structure, "dvine_structure.csv")
 write.csv(dvine_output$LogLik, "dvine_loglik.csv")
 # select final dvine structure based on loglik value and saving as csv
