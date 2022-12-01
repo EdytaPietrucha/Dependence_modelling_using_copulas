@@ -69,3 +69,7 @@ source('sample_from_calibrated_ellipt_archimed_copulas.R')
 
 # fit vine copulas to data - c-vine, d-vine and r-vine structures under consideration
 # source('vines_copula_fitting.R')
+
+# checking criterion values when different families of pair-copulas are in usage
+# NOT RUN!
+# source('vines_copulas_family.R')
