@@ -13,7 +13,7 @@ if (model == 'dvine') {
   model_struc <- fits_vines$rvine
   vine_name <- 'R-vine'
 }
-sample_vine <- rvinecop(number_sim, vine_cop)
+sample_vine <- rvinecop(number_sim, model_struc)
 sampling_from_vine_copula <- matrix(nrow = number_sim, ncol = copula_dim)
 
 fitted_t <- fitted_marginals$fitted_params$t

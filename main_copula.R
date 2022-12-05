@@ -73,3 +73,8 @@ source('sample_from_calibrated_ellipt_archimed_copulas.R')
 # checking criterion values when different families of pair-copulas are in usage
 # NOT RUN!
 # source('vines_copulas_family.R')
+# plot scatter plot for pairs of indexes (real observed data and simulated data) 
+# if you would like to change copula from witch simulated data comes run file 'sample_from_calibrated_*.R'
+# and custom interested parameters
+scatter_plot()
+scatter_plot_vines()
