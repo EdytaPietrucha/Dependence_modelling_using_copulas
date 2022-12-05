@@ -82,3 +82,29 @@ plot_hist <- function(data) {
     labs(title = title_name) 
   return(plt)
 }
+
+#### scatter plot for real observed data points and simulated data points ####
+# elliptical and archimedean copulas
+scatter_plot <- function(ind1 = 'DIS', ind2 = 'GS', data_sim = sampling_from_copula) {
+  
+  plt1 <- ggplot(data = data_log, aes(x = get(ind1), y = get(ind2))) + 
+    geom_point(size = 6) + my_style + xlab(indexes_to_plot[1]) + ylab(indexes_to_plot[2]) +
+    ggtitle(paste0('Scatter plot ', indexes_to_plot[1], '~', indexes_to_plot[2]), 
+            subtitle = paste0('Simulation from ', copula_name, ' copula')) + 
+    geom_point(data = data_sim, aes(x = get(ind1), y = get(ind2)), 
+               colour = '#D73027', size = 6)
+  return(plt1)
+}
+#scatter_plot()
+# vines copulas
+scatter_plot_vines <- function(ind1 = 'DIS', ind2 = 'GS', data_sim = sampling_from_vine_copula) {
+  
+  plt1 <- ggplot(data = data_log, aes(x = get(ind1), y = get(ind2))) + 
+    geom_point(size = 6) + my_style + xlab(indexes_to_plot[1]) + ylab(indexes_to_plot[2]) +
+    ggtitle(paste0('Scatter plot ', indexes_to_plot[1], '~', indexes_to_plot[2]), 
+            subtitle = paste0('Simulation from decomposition ', vine_name)) + 
+    geom_point(data = data_sim, aes(x = get(ind1), y = get(ind2)), 
+               colour = '#D73027', size = 6)
+  return(plt1)
+}
+#scatter_plot_vines()
