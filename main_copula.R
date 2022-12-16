@@ -55,6 +55,9 @@ plot_corr_matrix(data_log, 'spearman')
 plot_corr_matrix(data_log, 'kendall')
 plot_hist(data_log)
 
+# saving plots
+# source('saving_plots.R')
+
 # fitting marginals distributions
 source('fitting_marginals.R')
 # plot fitted marginals distributions

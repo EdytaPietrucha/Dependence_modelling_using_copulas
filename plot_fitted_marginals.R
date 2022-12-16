@@ -31,12 +31,22 @@ plot_fitted_densities <- function(index_name) {
 }
 
 require(gridExtra)
+setwd(paste0(main_github_path,'/figures/'))
+jpeg(filename = "IT_comapnies.jpeg",
+     width = 1600, height = 700)
 grid.arrange(plot_fitted_densities('AAPL'), 
              plot_fitted_densities('MSFT'), 
              plot_fitted_densities('NVDA'), ncol=3)
+dev.off()
+jpeg(filename = "financials_comapnies.jpeg",
+     width = 1600, height = 700)
 grid.arrange(plot_fitted_densities('C'), 
              plot_fitted_densities('GS'), 
              plot_fitted_densities('JPM'), ncol=3)
+dev.off()
+jpeg(filename = "services_comapnies.jpeg",
+     width = 1600, height = 700)
 grid.arrange(plot_fitted_densities('DIS'), 
              plot_fitted_densities('NFLX'), 
              plot_fitted_densities('TWTR'), ncol=3)
+dev.off()
