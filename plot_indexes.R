@@ -39,13 +39,14 @@ indexes_plot <- function(dataset, type) {
   
   data_xts <- xts(dataset %>% dplyr::select(-date), dataset$date)
   
-  plot(data_xts, main = xts_title, lwd = 3, col = my_palette, cex=1.3)
+  plt <- plot(data_xts, main = xts_title, lwd = 3, col = my_palette, cex=1.3)
   addLegend(legend_position, on=1, legend.names = colnames(data_xts), col = my_palette,
             lty=rep(1,9),
             lwd=rep(2,9),
             ncol=3,
             bg="white",
             cex = 0.55, text.font = 2)
+  return(plt)
 }
 
 #### PLOT CORRELATION MATRIX ####
