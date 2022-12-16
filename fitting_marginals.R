@@ -29,3 +29,10 @@ for (j in 1:distr_num) {
 criterion_names <- c('aic', 'bic', 'loglik')
 criterion_summary <-  fitted_marginals[criterion_names] %>% lapply(function(x) as.data.frame(x, row.names = labels_indexes))
 criterion_summary %>% print()
+# saving results
+setwd(paste0(main_github_path,'/outputs/marginals/'))
+for (i in criterion_names) {
+  write.csv(criterion_summary[[i]], 
+            paste0("marginals_fitted_",i,".csv"))
+}
+setwd(main_github_path)
