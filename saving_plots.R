@@ -1,5 +1,5 @@
 # saving generated figures in jpeg format in figures folder
-setwd(paste0(main_github_path,'/figures/'))
+setwd(paste0(main_path,'/figures/'))
 
 jpeg(filename = "indexes_lvls.jpeg",
     width = 1200, height = 700)
@@ -8,7 +8,7 @@ dev.off()
 
 jpeg(filename = "indexes_increments.jpeg",
      width = 1200, height = 700)
-indexes_plot(data_log_tibble, 'increment')
+indexes_plot(data_log_date, 'increment')
 dev.off()
 
 jpeg(filename = "histogram_indexes.jpeg",
