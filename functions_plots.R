@@ -122,13 +122,13 @@ plot_fitted_densities <- function(data, index_name) {
   i <- which(labels_indexes == index_name)
   
   # Creating density values for each fitted marginal distribution
-  dt_values <- 1/fitted_marginals$fitted_params$t['s',i] * dt((x_values - fitted_marginals$fitted_params$t['m',i])/fitted_marginals$fitted_params$t['s',i], fitted_marginals$fitted_params$t['df',i])
+  dt_values <- 1/marginals_fitted$params$t['s',i] * dt((x_values - marginals_fitted$params$t['m',i])/marginals_fitted$params$t['s',i], marginals_fitted$params$t['df',i])
   
-  dlogis_values <- dlogis(x_values, fitted_marginals$fitted_params$logistic['location', i], fitted_marginals$fitted_params$logistic['scale', i])
+  dlogis_values <- dlogis(x_values, marginals_fitted$params$logistic['location', i], marginals_fitted$params$logistic['scale', i])
   
-  dnorm_values <- dnorm(x_values, fitted_marginals$fitted_params$normal['mean',i], fitted_marginals$fitted_params$normal['sd',i])
+  dnorm_values <- dnorm(x_values, marginals_fitted$params$normal['mean',i], marginals_fitted$params$normal['sd',i])
   
-  dcauchy_values <- dcauchy(x_values, fitted_marginals$fitted_params$cauchy['location', i], fitted_marginals$fitted_params$cauchy['scale', i])
+  dcauchy_values <- dcauchy(x_values, marginals_fitted$params$cauchy['location', i], marginals_fitted$params$cauchy['scale', i])
   
   # Creating fitted density plots
   plt <- ggplot(data, aes(x = get(index_name))) + 

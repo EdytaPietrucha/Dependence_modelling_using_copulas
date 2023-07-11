@@ -60,8 +60,6 @@ plot_hist(data_log)
 # source('saving_plots.R')
 
 #### Fitting marginals distributions  ------------------------------------------------
-source('fitting_marginals.R')
-
 # Selected set for distributions:
 # normal = 'normal', cauchy = 'cauchy', logistic = 'logistic', tstudent = 't'
 
@@ -102,12 +100,13 @@ marginals_fit <- function(data,
   criterion_summary <-  fitted_marginals[criterion_names] %>% 
     lapply(function(x) as.data.frame(x, row.names = labels_indexes))
   
-  return(list("params" = fitted_marginals,
+  return(list("params" = fitted_marginals$fitted_params,
               "metrics" = criterion_summary))
   
 }
 
 marginals_fitted <- marginals_fit(data_log)  
+# The best score has been reached for t-Student distribution for all marginals
 
 # Saving results
 setwd(paste0(main_path,'/outputs/marginals/'))
@@ -145,7 +144,7 @@ for (i in names(marginals_pt)) {
 
 setwd(main_path)
 
-##### COPULA CALIBRATION ----------------------------------------------------------
+#### COPULA CALIBRATION ----------------------------------------------------------
 ####  Elliptical & Archimedean
 # Transform the marginals to the unit interval
 pseudo_data <- pobs(data_log)
@@ -160,7 +159,10 @@ copulas <- list(normal = normalCopula(dim = indn, dispstr = "un"),
 # Fitting copulas using 'mpl' - Maximum pseudo-likelihood estimator
 ellip_arch <- sapply(copulas,
                          function(x) 
-                           copula::fitCopula(x, data = pseudo_data, method = "mpl"))
+                           copula::fitCopula(x, 
+                                             data = pseudo_data, 
+                                             method = "mpl")
+                     )
 
 metric_ellip_arch <- list('AIC' = sapply(ellip_arch, AIC),
                          'BIC' = sapply(ellip_arch, BIC),
@@ -169,9 +171,68 @@ metric_ellip_arch <- list('AIC' = sapply(ellip_arch, AIC),
 
 ellip_arch %>% print()
 metric_ellip_arch %>% print()
+# The best score has been reached by t-Student copula
+
+##### Sampling from t-Student copula  ----------------------------------------------
+# Sampling will be sensitive on seed, so we define default seed as 123
+set.seed(123)
+
+# As final marginal distributions the choice is a t-student distributions to all
+# marginals as it gives us the best score for AIC, BIC and LogLik metrics
+final_marginals <- 't' # in c('norm', 't', 'cauchy', 'logis')
+source('marginals_fitted_params_list.R')
+params_list_after_fitting %>% print
+
+# Coefficients from t-Student copula
+fitted_coef <- coef(ellip_arch[["t"]])
+# Define correlation method used to copula calibration
+cor_method <- 'spearman' # \in c("pearson", "kendall", "spearman")
+
+fitted_copula <- tCopula(param = P2p(cor_mat[[cor_method]]),
+        df = fitted_coef[names(fitted_coef) == "df"],
+        dim = indn, 
+        dispstr="un",
+        df.fixed = T)
+
+# Creating multivariate distribution for t-Studnet copula and t-Student marginals
+join_distribution <- mvdc(copula=fitted_copula, 
+                          margins=rep(final_marginals,9),
+                          paramMargins=params_list_after_fitting)
+
+# Define number of simulations
+simn <- dim(data_log)[1]
+
+# Random generator for a multivariate distribution
+join_distribution_sample <- rMvdc(simn, join_distribution)
+
+# Generate a random variate:	rt_ls(df, mu, sigma) =	rt(df)*sigma + mu
+# Marginals parameters preparation
+fit_params <- marginals_fitted$params[[final_marginals]]
+location <- fit_params[if_else((fit_params %>% rownames() == 'm') %>% sum == 1, 'm', 'location'),]
+scale <- fit_params[grepl('^s+', fit_params %>% row.names()) %>% which(),]
+
+# Data scaling
+sampling_from_copula <- matrix(nrow = dim(join_distribution_sample)[1],
+                               ncol = dim(join_distribution_sample)[2])
+for (i in 1:indn){
+  sampling_from_copula[,i] <- join_distribution_sample[,i]*scale[i] + location[i]
+}
+
+sampling_from_copula <- as.data.frame(sampling_from_copula)
+colnames(sampling_from_copula) <- labels_indexes
+sampling_from_copula %>% head
+
+# cor_mat$pearson - cor(sampling_from_copula)
+# plot correlation matrix
+cor_nm <- "kendall" 
+plot_corr_matrix(sampling_from_copula, cor_nm) + 
+  labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated t-Student copula'),
+       subtitle = paste0('Marginals come from ',final_marginals,' distribution'))
+
+cor_mat[[cor_nm]] - cor(sampling_from_copula, method = cor_nm)
 
 # File with calibrated copulas and random sampling from copulas and correlation matrices plots
-source('sample_from_calibrated_ellipt_archimed_copulas.R')
+# source('sample_from_calibrated_ellipt_archimed_copulas.R')
 
 # fit vine copulas to data - c-vine, d-vine and r-vine structures under consideration
 # source('vines_copula_fitting.R')
