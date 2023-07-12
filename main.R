@@ -145,7 +145,7 @@ for (i in names(marginals_pt)) {
 setwd(main_path)
 
 #### COPULA CALIBRATION ----------------------------------------------------------
-####  Elliptical & Archimedean
+####  Elliptical & Archimedean  --------------------------------------------------
 # Transform the marginals to the unit interval
 pseudo_data <- pobs(data_log)
 
@@ -231,8 +231,61 @@ plot_corr_matrix(sampling_from_copula, cor_nm) +
 
 cor_mat[[cor_nm]] - cor(sampling_from_copula, method = cor_nm)
 
-# File with calibrated copulas and random sampling from copulas and correlation matrices plots
-# source('sample_from_calibrated_ellipt_archimed_copulas.R')
+####  Vines copulas  -------------------------------------------------------------------
+
+# Define family of bicopulas used in the calibration
+family_bicop <- c('archimedean', 'elliptical') 
+# Define criterion for family selection
+criterion_vines <- 'loglik' # criterion_vines
+
+## C-vine structure selection - methodology is based on assumption that main root for each edge
+# corresponds to index which has the highest value of column sum from Spearman correlation matrix
+correlation_matrix <- cor_mat$spearman
+cvine_struc <- cvine_structure(order(colSums(cor_mat$spearman)))
+
+## D-vine structure selection - methodology is based on the assumption that companies from one sector are the most dependent
+# and should be inseparably next to each other. For the analysis purpose we are running a simulation which
+# randomly sets an order of the indexes from the same sector then fit a vine copula and return loglik number 
+
+# DO NOT RUN!
+# source('selecting_dvine_structure.R')
+dvine_struc_all <- fread('outputs/dvine_struc.csv')
+# Select structure with the highest LogLik number & Convert to numeric
+dvine_struc_seq <- dvine_struc_all %>% 
+  filter(LogLik == max(LogLik)) %>%
+  dplyr::select(Structure) %>%
+  str_split(pattern = ",") %>% 
+  unlist() %>%
+  as.numeric()
+
+dvine_struc <- dvine_structure(dvine_struc_seq)
+
+## R-vie - Structure based  on Dissman's structure selection algorithm (https://cran.r-project.org/web/packages/rvinecopulib/rvinecopulib.pdf page 31)
+rvine_struc <- NA
+
+vine_structures <-  list('dvine' = dvine_struc,
+                         'cvine' = cvine_struc,
+                         'rvine' = rvine_struc
+)
+
+#plot(rvine_struc)
+fits_vines = lapply(vine_structures,
+                    function(x) vinecop(pseudo_data, structure = x, keep_data = TRUE, 
+                                        family_set = family, 
+                                        selcrit = model_crit, tree_crit = 'rho', par_method = 'mle')
+)
+fits_vines %>% print()
+
+measures_vine_copulas <- list('AIC' = sapply(fits_vines, AIC),
+                              'BIC' = sapply(fits_vines, BIC),
+                              'Log-likelihood' = sapply(fits_vines, logLik)
+)
+measures_vine_copulas %>% print()
+# plot first two copula trees
+plot(fits_vines$dvine, edge_labels = "family_tau", tree = 1:2)
+plot(fits_vines$cvine, edge_labels = "family_tau", tree = 1:2)
+plot(fits_vines$rvine, edge_labels = "family_tau", tree = 1:2)
+
 
 # fit vine copulas to data - c-vine, d-vine and r-vine structures under consideration
 # source('vines_copula_fitting.R')

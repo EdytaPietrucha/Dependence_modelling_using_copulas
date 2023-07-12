@@ -1,29 +1,42 @@
-dvine_name <- c('dvine_object', 'LogLik', 'structure')
-n <- 20 # number of simulations
+####  D0vine structure selection analysis  --------------------------------------
+# Number of simulations
+ndvine <- 20
+struc_nms <- c("Structure", "LogLik", "AIC", "BIC")
+dvine_output <- data.frame(matrix(NA, 
+                                  nrow = n, 
+                                  ncol = length(struc_nms))) %>%
+  setNames(struc_nms)
 
-dvine_output <- lapply(dvine_name, 
-       function(x) 
-         as.list(sapply(paste0('d',seq(1:n)), function(x) NULL))
-) %>% 
-  setNames(dvine_name)
+## Simulation part  ------------------------------------------------
 
-for (i in 1:n) {
+for (i in 1:ndvine) {
   
-  sequence <- c(sample(1:3,3), sample(4:6, 3), sample(7:9, 3))
-  model_struc <- dvine_structure(sequence)
-  # fitting d-vine stucture
-  fit_vine <- vinecop(pseudo_data, structure = model_struc, keep_data = TRUE, family_set = family,
-                      selcrit = 'loglik', tree_crit = 'rho', par_method = 'mle')
-  # saving results in list
-  dvine_output$dvine_object[[i]] <- fit_vine 
-  dvine_output$LogLik[[i]] <- fit_vine %>% logLik() %>% head(1) %>% round(2)
-  dvine_output$structure[[i]] <- sequence
+  # Define sector order
+  sector_order <- sample(1:3, 3)
+  temp <- 3*sector_order
+  
+  # Sample random sequence of the indexes
+  dvine_sequence <- c(sample((temp[1] - 2) : temp[1]), sample((temp[2] - 2) : temp[2]), sample((temp[3] - 2) : temp[3]))
+  dvine_struc_rand <- dvine_structure(dvine_sequence)
+  
+  # Vine fitting
+  fit_vine <- vinecop(pseudo_data, 
+                      structure = dvine_struc_rand, 
+                      keep_data = TRUE, 
+                      family_set = family_bicop,
+                      selcrit = criterion_vines, 
+                      tree_crit = 'rho', 
+                      par_method = 'mle')
+  
+  # output
+  dvine_output[i,] <- c("Structure" = paste(as.character(dvine_sequence), collapse = ","),
+                        "LogLik" = round(logLik(fit_vine)[1], 2),
+                        "AIC" = round(AIC(fit_vine), 2),
+                        "BIC" = round(BIC(fit_vine), 2))
+  
 }
-dvine_output %>% print
-# saving results as csv file
-setwd(paste0(main_github_path, '/output'))
-write.csv(dvine_output$structure, "dvine_structure.csv")
-write.csv(dvine_output$LogLik, "dvine_loglik.csv")
-# select final dvine structure based on loglik value and saving as csv
-dvine_final_struc <- dvine_output$structure[[which.max(new)]]
-write.csv(dvine_final_struc, 'dvine_final_structure.csv')
+
+# Saving the result
+setwd(paste0(main_path, "/outputs"))
+fwrite(dvine_output, "dvine_struc.csv")
+setwd(main_path)
