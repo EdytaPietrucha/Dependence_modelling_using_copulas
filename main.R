@@ -3,7 +3,7 @@ main_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(main_path)
 
 ####  Libraries  ---------------------------------------------------------------------
-source("Libraries.R")
+source("libraries.R")
 
 #### Load data  -------------------------------------------------------------------
 # We will use data from an interval period of 8 years which ends with 2022-08-23  
@@ -50,9 +50,9 @@ cor_mat <- list("pearson" = cor(data_log, method = 'pearson'),
 source('functions_plots.R')
 indexes_plot(data, 'level')
 indexes_plot(data_log_date, 'increment')
-cor_mat_pt <- list('pearson' = plot_corr_matrix(data_num, 'pearson'),
-                   'spearman' = plot_corr_matrix(data_num, 'spearman'),
-                   'kendall' = plot_corr_matrix(data_num, 'kendall')
+cor_mat_pt <- list('pearson' = plot_corr_matrix(data_log, 'pearson'),
+                   'spearman' = plot_corr_matrix(data_log, 'spearman'),
+                   'kendall' = plot_corr_matrix(data_log, 'kendall')
 )
 plot_hist(data_log)
 
@@ -110,7 +110,7 @@ marginals_fitted <- marginals_fit(data_log)
 
 # Saving results
 setwd(paste0(main_path,'/outputs/marginals/'))
-
+criterion_names <- c('loglik', 'aic', 'bic')
 for (i in criterion_names) {
   write.csv(marginals_fitted[["metrics"]][[i]], 
             paste0("marginals_",i,".csv"))
@@ -146,7 +146,7 @@ setwd(main_path)
 
 #### COPULA CALIBRATION ----------------------------------------------------------
 ####  Elliptical & Archimedean  --------------------------------------------------
-# Transform the marginals to the unit interval
+# Transform marginals to the unit interval
 pseudo_data <- pobs(data_log)
 
 # Define copulas objects
@@ -169,9 +169,11 @@ metric_ellip_arch <- list('AIC' = sapply(ellip_arch, AIC),
                          'Log-likelihood' = sapply(ellip_arch, logLik)
 )
 
-ellip_arch %>% print()
-metric_ellip_arch %>% print()
-# The best score has been reached by t-Student copula
+ellip_arch %>% 
+  print()
+metric_ellip_arch %>% 
+  print()
+# The best score has been reached for t-Student copula
 
 ##### Sampling from t-Student copula  ----------------------------------------------
 # Sampling will be sensitive on seed, so we define default seed as 123
@@ -181,7 +183,8 @@ set.seed(123)
 # marginals as it gives us the best score for AIC, BIC and LogLik metrics
 final_marginals <- 't' # in c('norm', 't', 'cauchy', 'logis')
 source('marginals_fitted_params_list.R')
-params_list_after_fitting %>% print
+params_list_after_fitting %>% 
+  print
 
 # Coefficients from t-Student copula
 fitted_coef <- coef(ellip_arch[["t"]])
@@ -220,7 +223,8 @@ for (i in 1:indn){
 
 sampling_from_copula <- as.data.frame(sampling_from_copula)
 colnames(sampling_from_copula) <- labels_indexes
-sampling_from_copula %>% head
+sampling_from_copula %>% 
+  head
 
 # cor_mat$pearson - cor(sampling_from_copula)
 # plot correlation matrix
@@ -230,6 +234,81 @@ plot_corr_matrix(sampling_from_copula, cor_nm) +
        subtitle = paste0('Marginals come from ',final_marginals,' distribution'))
 
 cor_mat[[cor_nm]] - cor(sampling_from_copula, method = cor_nm)
+
+#### Generate sample from fitted Elliptical & Archimedean copulas  ---------------------
+
+# As final marginal distributions the choice is a t-student distributions to all
+# marginals as it gives us the best score for AIC, BIC and LogLik metrics
+final_marginals <- 't' # in c('norm', 't', 'cauchy', 'logis')
+source('marginals_fitted_params_list.R')
+fit_params <- marginals_fitted$params[[final_marginals]]
+location <- fit_params[if_else((fit_params %>% rownames() == 'm') %>% sum == 1, 'm', 'location'),]
+scale <- fit_params[grepl('^s+', fit_params %>% row.names()) %>% which(),]
+
+# Define correlation method used to copula calibration
+cor_method <- 'spearman' # \in c("pearson", "kendall", "spearman")
+corelation_matrix <- cor_mat[[cor_method]]
+
+# Define number of simulations
+simn <- dim(data_log)[1]
+seed_fixed <- 123
+
+for (copula_nm in c('normal', 't', 'frank' , 'clayton', 'gumbel')) {
+  
+  copula_to_fit <- copula_nm 
+  copula_params_fit <- ellip_arch[[copula_to_fit]]
+  fitted_coef <- coef(copula_params_fit)
+  
+  if (copula_to_fit == 'normal') {
+    copula_object_after_fitting <- normalCopula(param = fitted_coef,
+                                                dim = indn, 
+                                                dispstr="un")
+    copula_name <- 'Gaussian'
+  } else if (copula_to_fit == 't') {
+    copula_object_after_fitting <- tCopula(param = fitted_coef[names(fitted_coef) != "df"],
+                                           df = fitted_coef[names(fitted_coef) == "df"],
+                                           dim = indn, 
+                                           dispstr="un",
+                                           df.fixed = T)
+    copula_name <- 't-Student'
+  } else if(copula_to_fit == 'frank') {
+    copula_object_after_fitting <- frankCopula(param = fitted_coef, 
+                                               dim = indn)
+    copula_name <- 'Frank'
+  }else if(copula_to_fit == 'clayton') {
+    copula_object_after_fitting <- claytonCopula(param = fitted_coef, 
+                                                 dim = indn)
+    copula_name <- 'Clayton'
+  }else if(copula_to_fit == 'gumbel') {
+    copula_object_after_fitting <- gumbelCopula(param = fitted_coef, 
+                                                dim = indn)
+    copula_name <- 'Gumbel'
+  }
+  
+  # creating object multivariate distribution via copula and parametric margins
+  copula_fit <- mvdc(copula=copula_object_after_fitting, 
+                     margins=rep(final_marginals,9),
+                     paramMargins=params_list_after_fitting )
+  
+  # Now, we can random sample from calibrated copulas functions
+  set.seed(seed_fixed)
+  sampling_from_copula <- rMvdc(simn, copula_fit)
+  # Generate a random variate:	rt_ls(df, mu, sigma) =	rt(df)*sigma + mu
+  
+  for (i in 1:indn){
+    sampling_from_copula[,i] <- sampling_from_copula[,i]*scale[i] + location[i]
+  }
+  
+  sampling_from_copula <- as.data.frame(sampling_from_copula)
+  colnames(sampling_from_copula) <- labels_indexes
+  
+  # Saving results
+  setwd(paste0(main_path,'/outputs/simulations/'))
+    write.csv(sampling_from_copula, 
+              paste0(copula_name, "_seed_",seed_fixed,".csv"))
+}
+
+setwd(main_path)
 
 ####  Vines copulas  -------------------------------------------------------------------
 
@@ -263,38 +342,160 @@ dvine_struc <- dvine_structure(dvine_struc_seq)
 ## R-vie - Structure based  on Dissman's structure selection algorithm (https://cran.r-project.org/web/packages/rvinecopulib/rvinecopulib.pdf page 31)
 rvine_struc <- NA
 
+# Define vine copulas objects
 vine_structures <-  list('dvine' = dvine_struc,
                          'cvine' = cvine_struc,
                          'rvine' = rvine_struc
 )
 
-#plot(rvine_struc)
-fits_vines = lapply(vine_structures,
-                    function(x) vinecop(pseudo_data, structure = x, keep_data = TRUE, 
-                                        family_set = family, 
-                                        selcrit = model_crit, tree_crit = 'rho', par_method = 'mle')
+# Fitting copulas using "mle" for maximum likelihood 
+vines <- lapply(vine_structures,
+                    function(x) 
+                      vinecop(pseudo_data, 
+                              structure = x, 
+                              keep_data = TRUE, 
+                              family_set = family_bicop, 
+                              selcrit = criterion_vines, 
+                              tree_crit = 'rho', 
+                              par_method = 'mle')
 )
-fits_vines %>% print()
 
-measures_vine_copulas <- list('AIC' = sapply(fits_vines, AIC),
-                              'BIC' = sapply(fits_vines, BIC),
-                              'Log-likelihood' = sapply(fits_vines, logLik)
+metric_vines <- list('AIC' = sapply(vines, AIC),
+                     'BIC' = sapply(vines, BIC),
+                     'Log-likelihood' = sapply(vines, logLik)
 )
-measures_vine_copulas %>% print()
+
+vines %>% 
+  print()
+metric_vines %>% 
+  print()
+
+# The best score has been reached for d-vine structure
 # plot first two copula trees
-plot(fits_vines$dvine, edge_labels = "family_tau", tree = 1:2)
-plot(fits_vines$cvine, edge_labels = "family_tau", tree = 1:2)
-plot(fits_vines$rvine, edge_labels = "family_tau", tree = 1:2)
+plot(vines$dvine, edge_labels = "family_tau", tree = 1:2)
+plot(vines$cvine, edge_labels = "family_tau", tree = 1:2)
+plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 
-
-# fit vine copulas to data - c-vine, d-vine and r-vine structures under consideration
-# source('vines_copula_fitting.R')
-
-# checking criterion values when different families of pair-copulas are in usage
+# Vine structures can use different bi-copula families in calibration. 
+# Below code investigate criterion scores for various families of pair-copulas in usage
 # NOT RUN!
 # source('vines_copulas_family.R')
+
+##### Sampling from Vines copulas  ----------------------------------------------
+# Sampling will be sensitive on seed, so we define default seed as 123
+set.seed(123)
+model <- 'dvine' # \in c('dvine', 'cvine', 'rvine')
+
+if (model == 'dvine') {
+  model_struc <- vines$dvine
+  vine_name <- 'D-vine'
+} else if (model == 'cvine') {
+  model_struc <- vines$cvine
+  vine_name <- 'C-vine'
+} else if (model == 'rvine') {
+  model_struc <- vines$rvine
+  vine_name <- 'R-vine'
+}
+
+# random generation for the vine copula distribution
+sample_vine <- rvinecop(simn, model_struc)
+sampling_from_vine_copula <- matrix(nrow = simn, 
+                                    ncol = indn)
+
+for (i in 1:indn){
+  sampling_from_vine_copula[,i] <- qt(sample_vine[,i], df = fit_params['df',i])*scale[i] + location[i]
+}
+
+sampling_from_vine_copula <- as.data.frame(sampling_from_vine_copula)
+colnames(sampling_from_vine_copula) <- labels_indexes
+sampling_from_vine_copula %>% 
+  head
+
+# plot correlation matrix
+cor_nm <- "kendall" 
+plot_corr_matrix(sampling_from_vine_copula, cor_nm) + 
+  labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated ', model, ' copula structure'),
+       subtitle = paste0('Marginals come from t distribution'))
+
+cor_mat[[cor_nm]] - cor(sampling_from_vine_copula, method = cor_nm)
+
+#### Generate sample from fitted Vines copulas  ---------------------
+
+for (copula_nm in c('dvine', 'cvine', 'rvine')) {
+  
+  model <- copula_nm
+  
+  if (model == 'dvine') {
+    model_struc <- vines$dvine
+    vine_name <- 'D-vine'
+  } else if (model == 'cvine') {
+    model_struc <- vines$cvine
+    vine_name <- 'C-vine'
+  } else if (model == 'rvine') {
+    model_struc <- vines$rvine
+    vine_name <- 'R-vine'
+  }
+  
+  # random generation for the vine copula distribution
+  set.seed(seed_fixed)
+  sample_vine <- rvinecop(simn, model_struc)
+  sampling_from_vine_copula <- matrix(nrow = simn, 
+                                      ncol = indn)
+  
+  for (i in 1:indn){
+    sampling_from_vine_copula[,i] <- qt(sample_vine[,i], df = fit_params['df',i])*scale[i] + location[i]
+  }
+  
+  sampling_from_vine_copula <- as.data.frame(sampling_from_vine_copula)
+  colnames(sampling_from_vine_copula) <- labels_indexes
+  
+  # Saving results
+  setwd(paste0(main_path,'/outputs/simulations/'))
+  write.csv(sampling_from_vine_copula, 
+            paste0(copula_nm, "_seed_",seed_fixed,".csv"))
+  
+}
+
 # plot scatter plot for pairs of indexes (real observed data and simulated data) 
-# if you would like to change copula from witch simulated data comes run file 'sample_from_calibrated_*.R'
-# and custom interested parameters
-scatter_plot()
-scatter_plot_vines()
+setwd(paste0(main_path,"/outputs/simulations/"))
+simulations <- lapply(list.files(paste0(main_path,"/outputs/simulations/")), function(x) fread(x)) %>%
+  setNames(gsub(".csv", "", list.files(paste0(main_path,"/outputs/simulations/"))))
+
+#### Correlation matrices for sampled joint distributions ---------------------
+for (csv in names(simulations)) {
+  
+  data_sim <- simulations[[csv]]
+  
+  setwd(paste0(main_path,'/figures/'))
+  
+  cor_nm <- "spearman"
+  jpeg(filename = paste0(cor_nm,"_copula_", csv,".jpeg"),
+       width = 1200, height = 700)
+  
+  # plot correlation matrix
+  plot_corr_matrix(data_sim[,-"V1"], cor_nm) + 
+    labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated ', str_split(csv, "_")[[1]][1], ' copula'),
+         subtitle = paste0('Marginals come from ',final_marginals,' distribution'))
+  
+  dev.off()
+  
+}
+
+#### Scatter plots for sampled joint distributions ---------------------
+for (csv in names(simulations)) {
+  setwd(paste0(main_path,'/figures/'))
+  
+  jpeg(filename = paste0("GS_vs_DIS_",str_split(csv, "_")[[1]][1] ,".jpeg"),
+       width = 1200, height = 700)
+  
+  scatter_plot(data_sim = simulations[[csv]],copula_name = str_split(csv, "_")[[1]][1])
+  
+  dev.off()
+  
+}
+
+scatter_plot(data_sim = simulations$dvine_seed_123,copula_name = "d-vine")
+scatter_plot(data_real = as.data.frame(pseudo_data), 
+             data_sim = as.data.frame(pobs(simulations$dvine_seed_123)),
+             copula_name = "d-vine",
+             dot_size = 2)
