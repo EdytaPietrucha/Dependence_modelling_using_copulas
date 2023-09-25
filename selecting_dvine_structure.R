@@ -1,4 +1,4 @@
-####  D0vine structure selection analysis  --------------------------------------
+####  D-vine structure selection analysis  --------------------------------------
 # Number of simulations
 ndvine <- 20
 struc_nms <- c("Structure", "LogLik", "AIC", "BIC")

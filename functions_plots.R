@@ -157,15 +157,16 @@ plot_fitted_densities <- function(data, index_name) {
 #####  elliptical and archimedean copulas -----------------------------------
 scatter_plot <- function(ind1 = 'DIS', 
                          ind2 = 'GS', 
-                         data_real = data_num, 
-                         data_sim = sampling_from_copula,
-                         copula_name = "") {
+                         data_real = data_log, 
+                         data_sim,
+                         copula_name = "",
+                         dot_size = 6) {
   
   title_nm <- paste0('Scatter plot ', ind1, '~', ind2)
   subtitle_nm <- paste0('Simulation from ', copula_name, ' copula') 
     
   plt1 <- ggplot(data = data_real, aes(x = get(ind1), y = get(ind2))) + 
-    geom_point(size = 6) + 
+    geom_point(size = dot_size) + 
     my_style + 
     xlab(ind1) + 
     ylab(ind2) +
@@ -174,22 +175,7 @@ scatter_plot <- function(ind1 = 'DIS',
     geom_point(data = data_sim, 
                aes(x = get(ind1), y = get(ind2)), 
                colour = '#D73027', 
-               size = 6)
+               size = dot_size)
   
   return(plt1)
 }
-# scatter_plot()
-#####  vines copulas  -------------------------------------------------------
-scatter_plot_vines <- function(ind1 = 'DIS', 
-                               ind2 = 'GS', 
-                               data_sim = sampling_from_vine_copula) {
-  
-  plt1 <- ggplot(data = data_log, aes(x = get(ind1), y = get(ind2))) + 
-    geom_point(size = 6) + my_style + xlab(indexes_to_plot[1]) + ylab(indexes_to_plot[2]) +
-    ggtitle(paste0('Scatter plot ', indexes_to_plot[1], '~', indexes_to_plot[2]), 
-            subtitle = paste0('Simulation from decomposition ', vine_name)) + 
-    geom_point(data = data_sim, aes(x = get(ind1), y = get(ind2)), 
-               colour = '#D73027', size = 6)
-  return(plt1)
-}
-#scatter_plot_vines()
