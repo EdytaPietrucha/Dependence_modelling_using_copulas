@@ -2,11 +2,12 @@ dev.off()
 main_path <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(main_path)
 
-####  Libraries  ---------------------------------------------------------------------
+####  libraries & functions ----------------------------------------------------
 source("libraries.R")
+source('functions.R')
 
-#### Load data  -------------------------------------------------------------------
-# We will use data from an interval period of 8 years which ends with 2022-08-23  
+#### Load data  ----------------------------------------------------------------
+# We will use data from following 8 years, period ends with 2022-08-23  
 last_observed_day <- as.Date("2022-08-24")
 first_observed_day <- last_observed_day %m+% years(-8)
 
@@ -33,21 +34,20 @@ data_num <- data %>%
 # Any missing values
 sum(is.na(data)) 
 
-#### Convert to logarithmic increments  -----------------------------------------------
+#### Convert to logarithmic increments  ----------------------------------------
 data_log <- apply(log(data_num), 2, diff) %>% 
   as.tibble()
 
 data_log_date <- data_log %>%
   mutate(date = data$date[-1], .before = AAPL)
 
-#### Correlation matrices  -----------------------------------------------------------
+#### Correlation matrices  -----------------------------------------------------
 cor_mat <- list("pearson" = cor(data_log, method = 'pearson'),
                 "spearman" = cor(data_log, method = 'spearman'),
                 "kendall" = cor(data_log, method = 'kendall')
 )
 
-#### Plot time series, correlation matrices & histograms for indexes  ----------------
-source('functions_plots.R')
+#### Plot time series, correlation matrices & histograms for indexes  ----------
 indexes_plot(data, 'level')
 indexes_plot(data_log_date, 'increment')
 cor_mat_pt <- list('pearson' = plot_corr_matrix(data_log, 'pearson'),
@@ -56,55 +56,12 @@ cor_mat_pt <- list('pearson' = plot_corr_matrix(data_log, 'pearson'),
 )
 plot_hist(data_log)
 
-#### Saving plots  -------------------------------------------------------------------
+#### Saving plots  -------------------------------------------------------------
 # source('saving_plots.R')
 
-#### Fitting marginals distributions  ------------------------------------------------
+#### Fitting marginal distributions  -------------------------------------------
 # Selected set for distributions:
 # normal = 'normal', cauchy = 'cauchy', logistic = 'logistic', tstudent = 't'
-
-marginals_fit <- function(data, 
-                          marginals = c('normal', 't', 'cauchy', 'logistic')) {
-
-  marginal_distr_nm <- marginals
-  metric <- c('loglik', 'aic', 'bic', 'fitted_params')
-  
-  # Creating empty list used to filled by fitted marginal distributions
-  fitted_marginals <- lapply(metric, 
-                             function(x) 
-                               as.list(sapply(marginal_distr_nm, function(x) NULL))
-  ) %>% 
-    setNames(metric)
-  marginal_distr_after_fitting <- list()
-  
-  # Marginal distribution calibration
-  for (j in 1:length(marginal_distr_nm)) {
-    
-    distribution <- marginal_distr_nm[j]
-    
-    for (ind_nm in labels_indexes) {
-      marginal_distr_after_fitting[[ind_nm]] <- fitdistr(data_log[[ind_nm]],distribution)
-    }
-    
-    fitted_marginals$fitted_params[[distribution]] <- 
-      sapply(marginal_distr_after_fitting, function(x) x$estimate)
-    fitted_marginals$aic[[distribution]] <- 
-      sapply(marginal_distr_after_fitting, AIC)
-    fitted_marginals$bic[[distribution]] <- 
-      sapply(marginal_distr_after_fitting, BIC)
-    fitted_marginals$loglik[[distribution]] <- 
-      sapply(marginal_distr_after_fitting, logLik)
-  }
-  # Results
-  criterion_names <- metric[metric != "fitted_params"]
-  criterion_summary <-  fitted_marginals[criterion_names] %>% 
-    lapply(function(x) as.data.frame(x, row.names = labels_indexes))
-  
-  return(list("params" = fitted_marginals$fitted_params,
-              "metrics" = criterion_summary))
-  
-}
-
 marginals_fitted <- marginals_fit(data_log)  
 # The best score has been reached for t-Student distribution for all marginals
 
@@ -117,7 +74,7 @@ for (i in criterion_names) {
 }
 setwd(main_path)
 
-#### Plot fitted densities
+#### Plot fitted densities  ----------------------------------------------------
 marginals_pt <- list("IT_comapnies" = grid.arrange(plot_fitted_densities(data_log, 'AAPL'), 
                                                    plot_fitted_densities(data_log, 'MSFT'), 
                                                    plot_fitted_densities(data_log, 'NVDA'), 
@@ -133,7 +90,7 @@ marginals_pt <- list("IT_comapnies" = grid.arrange(plot_fitted_densities(data_lo
 )
 
 # Saving results
-setwd(paste0(main_path,'/figures/'))
+setwd(paste0(main_path,'/figures/marginals/'))
 
 for (i in names(marginals_pt)) {
   jpeg(filename = paste0(i, ".jpeg"),
@@ -144,8 +101,8 @@ for (i in names(marginals_pt)) {
 
 setwd(main_path)
 
-#### COPULA CALIBRATION ----------------------------------------------------------
-####  Elliptical & Archimedean  --------------------------------------------------
+#### COPULA CALIBRATION --------------------------------------------------------
+####  Elliptical & Archimedean  ------------------------------------------------
 # Transform marginals to the unit interval
 pseudo_data <- pobs(data_log)
 
@@ -174,6 +131,9 @@ ellip_arch %>%
 metric_ellip_arch %>% 
   print()
 # The best score has been reached for t-Student copula
+setwd(paste0(main_path, "/outputs/"))
+write.csv(t(as.data.frame(metric_ellip_arch)), 
+          "metrics_elliptical_archimedean.csv")
 
 ##### Sampling from t-Student copula  ----------------------------------------------
 # Sampling will be sensitive on seed, so we define default seed as 123
@@ -182,9 +142,7 @@ set.seed(123)
 # As final marginal distributions the choice is a t-student distributions to all
 # marginals as it gives us the best score for AIC, BIC and LogLik metrics
 final_marginals <- 't' # in c('norm', 't', 'cauchy', 'logis')
-source('marginals_fitted_params_list.R')
-params_list_after_fitting %>% 
-  print
+params_list_after_fitting <- marginal_parameter_preprocess(final_marginals = final_marginals)
 
 # Coefficients from t-Student copula
 fitted_coef <- coef(ellip_arch[["t"]])
@@ -239,75 +197,26 @@ cor_mat[[cor_nm]] - cor(sampling_from_copula, method = cor_nm)
 
 # As final marginal distributions the choice is a t-student distributions to all
 # marginals as it gives us the best score for AIC, BIC and LogLik metrics
-final_marginals <- 't' # in c('norm', 't', 'cauchy', 'logis')
-source('marginals_fitted_params_list.R')
-fit_params <- marginals_fitted$params[[final_marginals]]
-location <- fit_params[if_else((fit_params %>% rownames() == 'm') %>% sum == 1, 'm', 'location'),]
-scale <- fit_params[grepl('^s+', fit_params %>% row.names()) %>% which(),]
+# For copula calibration we will use a spearman matrix
 
-# Define correlation method used to copula calibration
-cor_method <- 'spearman' # \in c("pearson", "kendall", "spearman")
-corelation_matrix <- cor_mat[[cor_method]]
+sim_t_123 <- simulate_from_copula(marginals = "t",
+                     cor_method = 'spearman',
+                     copula_nm = "t",
+                     seed_fixed = 123)
 
-# Define number of simulations
-simn <- dim(data_log)[1]
-seed_fixed <- 123
-
+# Saving simulations in csv file
 for (copula_nm in c('normal', 't', 'frank' , 'clayton', 'gumbel')) {
   
-  copula_to_fit <- copula_nm 
-  copula_params_fit <- ellip_arch[[copula_to_fit]]
-  fitted_coef <- coef(copula_params_fit)
-  
-  if (copula_to_fit == 'normal') {
-    copula_object_after_fitting <- normalCopula(param = fitted_coef,
-                                                dim = indn, 
-                                                dispstr="un")
-    copula_name <- 'Gaussian'
-  } else if (copula_to_fit == 't') {
-    copula_object_after_fitting <- tCopula(param = fitted_coef[names(fitted_coef) != "df"],
-                                           df = fitted_coef[names(fitted_coef) == "df"],
-                                           dim = indn, 
-                                           dispstr="un",
-                                           df.fixed = T)
-    copula_name <- 't-Student'
-  } else if(copula_to_fit == 'frank') {
-    copula_object_after_fitting <- frankCopula(param = fitted_coef, 
-                                               dim = indn)
-    copula_name <- 'Frank'
-  }else if(copula_to_fit == 'clayton') {
-    copula_object_after_fitting <- claytonCopula(param = fitted_coef, 
-                                                 dim = indn)
-    copula_name <- 'Clayton'
-  }else if(copula_to_fit == 'gumbel') {
-    copula_object_after_fitting <- gumbelCopula(param = fitted_coef, 
-                                                dim = indn)
-    copula_name <- 'Gumbel'
-  }
-  
-  # creating object multivariate distribution via copula and parametric margins
-  copula_fit <- mvdc(copula=copula_object_after_fitting, 
-                     margins=rep(final_marginals,9),
-                     paramMargins=params_list_after_fitting )
-  
-  # Now, we can random sample from calibrated copulas functions
-  set.seed(seed_fixed)
-  sampling_from_copula <- rMvdc(simn, copula_fit)
-  # Generate a random variate:	rt_ls(df, mu, sigma) =	rt(df)*sigma + mu
-  
-  for (i in 1:indn){
-    sampling_from_copula[,i] <- sampling_from_copula[,i]*scale[i] + location[i]
-  }
-  
-  sampling_from_copula <- as.data.frame(sampling_from_copula)
-  colnames(sampling_from_copula) <- labels_indexes
-  
+  simulated_data <- simulate_from_copula(marginals = "t",
+                       cor_method = 'spearman',
+                       copula_nm = copula_nm,
+                       seed_fixed = 123)
   # Saving results
   setwd(paste0(main_path,'/outputs/simulations/'))
-    write.csv(sampling_from_copula, 
-              paste0(copula_name, "_seed_",seed_fixed,".csv"))
+  write.csv(simulated_data, 
+            paste0(copula_nm, "_seed_",seed_fixed,".csv"))
+  
 }
-
 setwd(main_path)
 
 ####  Vines copulas  -------------------------------------------------------------------
@@ -370,18 +279,26 @@ vines %>%
 metric_vines %>% 
   print()
 
+setwd(paste0(main_path, "/outputs/"))
+write.csv(t(as.data.frame(metric_vines)), 
+          "metrics_vines.csv")
+
 # The best score has been reached for d-vine structure
 # plot first two copula trees
 plot(vines$dvine, edge_labels = "family_tau", tree = 1:2)
 plot(vines$cvine, edge_labels = "family_tau", tree = 1:2)
 plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 
+# Saving plots with vine trees
+source("trees_plots_save.R")
+
+#### Different bi-copula families  ---------------------------------------------
 # Vine structures can use different bi-copula families in calibration. 
 # Below code investigate criterion scores for various families of pair-copulas in usage
 # NOT RUN!
 # source('vines_copulas_family.R')
 
-##### Sampling from Vines copulas  ----------------------------------------------
+##### Sampling from Vines copulas  ---------------------------------------------
 # Sampling will be sensitive on seed, so we define default seed as 123
 set.seed(123)
 model <- 'dvine' # \in c('dvine', 'cvine', 'rvine')
@@ -419,54 +336,33 @@ plot_corr_matrix(sampling_from_vine_copula, cor_nm) +
 
 cor_mat[[cor_nm]] - cor(sampling_from_vine_copula, method = cor_nm)
 
-#### Generate sample from fitted Vines copulas  ---------------------
+#### Generate sample from fitted Vines copulas  --------------------------------
+sim_dvine_123 <- simulate_from_vine_copula(marginals = "t",
+                                     copula_nm = "dvine",
+                                     seed_fixed = 123)
 
 for (copula_nm in c('dvine', 'cvine', 'rvine')) {
-  
-  model <- copula_nm
-  
-  if (model == 'dvine') {
-    model_struc <- vines$dvine
-    vine_name <- 'D-vine'
-  } else if (model == 'cvine') {
-    model_struc <- vines$cvine
-    vine_name <- 'C-vine'
-  } else if (model == 'rvine') {
-    model_struc <- vines$rvine
-    vine_name <- 'R-vine'
-  }
-  
-  # random generation for the vine copula distribution
-  set.seed(seed_fixed)
-  sample_vine <- rvinecop(simn, model_struc)
-  sampling_from_vine_copula <- matrix(nrow = simn, 
-                                      ncol = indn)
-  
-  for (i in 1:indn){
-    sampling_from_vine_copula[,i] <- qt(sample_vine[,i], df = fit_params['df',i])*scale[i] + location[i]
-  }
-  
-  sampling_from_vine_copula <- as.data.frame(sampling_from_vine_copula)
-  colnames(sampling_from_vine_copula) <- labels_indexes
-  
   # Saving results
-  setwd(paste0(main_path,'/outputs/simulations/'))
-  write.csv(sampling_from_vine_copula, 
-            paste0(copula_nm, "_seed_",seed_fixed,".csv"))
   
+  simulated_data <- simulate_from_vine_copula(marginals = "t",
+                                              copula_nm = copula_nm,
+                                              seed_fixed = 123)
+  
+  setwd(paste0(main_path,'/outputs/simulations/'))
+  write.csv(simulated_data, 
+            paste0(copula_nm, "_seed_",seed_fixed,".csv"))
 }
 
-# plot scatter plot for pairs of indexes (real observed data and simulated data) 
+#### Correlation matrices for sampled joint distributions ----------------------
 setwd(paste0(main_path,"/outputs/simulations/"))
 simulations <- lapply(list.files(paste0(main_path,"/outputs/simulations/")), function(x) fread(x)) %>%
   setNames(gsub(".csv", "", list.files(paste0(main_path,"/outputs/simulations/"))))
 
-#### Correlation matrices for sampled joint distributions ---------------------
 for (csv in names(simulations)) {
   
   data_sim <- simulations[[csv]]
   
-  setwd(paste0(main_path,'/figures/'))
+  setwd(paste0(main_path,'/figures/correlation/'))
   
   cor_nm <- "spearman"
   jpeg(filename = paste0(cor_nm,"_copula_", csv,".jpeg"),
@@ -481,9 +377,9 @@ for (csv in names(simulations)) {
   
 }
 
-#### Scatter plots for sampled joint distributions ---------------------
+#### Scatter plots for sampled joint distributions -----------------------------
 for (csv in names(simulations)) {
-  setwd(paste0(main_path,'/figures/'))
+  setwd(paste0(main_path,'/figures/GS_vs_DIS/'))
   
   jpeg(filename = paste0("GS_vs_DIS_",str_split(csv, "_")[[1]][1] ,".jpeg"),
        width = 1200, height = 700)

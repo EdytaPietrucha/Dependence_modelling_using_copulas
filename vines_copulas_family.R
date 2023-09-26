@@ -65,7 +65,7 @@ for (j in c("AIC", "BIC", "Log-likelihood")) {
     rownames_to_column(as.data.frame(criterion_family_cvines[[j]]), "family_bicop") %>% 
     left_join(tibble::rownames_to_column(as.data.frame(criterion_family_dvines[[j]]), "family_bicop")) %>% 
     left_join(tibble::rownames_to_column(as.data.frame(criterion_family_rvines[[j]]), "family_bicop")) %>%
-    setNames(c("family", "cvine", "dvine". "rvine"))
+    setNames(c("family", "cvine", "dvine", "rvine"))
   
   write_csv(results, paste0(j, "_for_varius_bicopulas_families.csv"))
 }

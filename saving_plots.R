@@ -16,6 +16,7 @@ jpeg(filename = "histogram_indexes.jpeg",
 plot_hist(data_log)
 dev.off()
 
+setwd(paste0(main_path,'/figures/correlation/'))
 jpeg(filename = "pearson_matrix.jpeg",
      width = 1200, height = 700)
 plot_corr_matrix(data_log, 'pearson')
