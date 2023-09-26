@@ -15,3 +15,5 @@ jpeg(filename = "trees_rvine.jpeg",
      width = 1200, height = 700)
 plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 dev.off()
+
+setwd(main_path)

@@ -1,9 +1,9 @@
 ####  D-vine structure selection analysis  --------------------------------------
 # Number of simulations
-ndvine <- 20
+ndvine <- 100
 struc_nms <- c("Structure", "LogLik", "AIC", "BIC")
 dvine_output <- data.frame(matrix(NA, 
-                                  nrow = n, 
+                                  nrow = ndvine, 
                                   ncol = length(struc_nms))) %>%
   setNames(struc_nms)
 

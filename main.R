@@ -14,7 +14,7 @@ first_observed_day <- last_observed_day %m+% years(-8)
 # Let's define a ticker labels for indexes used in project 
 labels_indexes <- c("AAPL", "MSFT", "NVDA", 
                     "C", "GS", "JPM", 
-                    "DIS", "NFLX", "ACGL") # before 2022 Nov TWTR now ACGL
+                    "DIS", "NFLX", "AMZN") # before 2022 Nov TWTR now ACGL as a replacement (AMZN - amazon?)
 indn <- length(labels_indexes)
 
 # Downloading daily variables
@@ -57,7 +57,7 @@ cor_mat_pt <- list('pearson' = plot_corr_matrix(data_log, 'pearson'),
 plot_hist(data_log)
 
 #### Saving plots  -------------------------------------------------------------
-# source('saving_plots.R')
+source('saving_plots.R')
 
 #### Fitting marginal distributions  -------------------------------------------
 # Selected set for distributions:
@@ -85,7 +85,7 @@ marginals_pt <- list("IT_comapnies" = grid.arrange(plot_fitted_densities(data_lo
                                                            ncol=3),
                      "services_comapnies" = grid.arrange(plot_fitted_densities(data_log, 'DIS'), 
                                                          plot_fitted_densities(data_log, 'NFLX'), 
-                                                         plot_fitted_densities(data_log, 'ACGL'), 
+                                                         plot_fitted_densities(data_log, 'AMZN'), 
                                                          ncol=3)
 )
 
@@ -205,6 +205,7 @@ sim_t_123 <- simulate_from_copula(marginals = "t",
                      seed_fixed = 123)
 
 # Saving simulations in csv file
+seed_fixed <- 123
 for (copula_nm in c('normal', 't', 'frank' , 'clayton', 'gumbel')) {
   
   simulated_data <- simulate_from_copula(marginals = "t",
@@ -236,7 +237,7 @@ cvine_struc <- cvine_structure(order(colSums(cor_mat$spearman)))
 # randomly sets an order of the indexes from the same sector then fit a vine copula and return loglik number 
 
 # DO NOT RUN!
-# source('selecting_dvine_structure.R')
+source('selecting_dvine_structure.R')
 dvine_struc_all <- fread('outputs/dvine_struc.csv')
 # Select structure with the highest LogLik number & Convert to numeric
 dvine_struc_seq <- dvine_struc_all %>% 
@@ -290,6 +291,7 @@ plot(vines$cvine, edge_labels = "family_tau", tree = 1:2)
 plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 
 # Saving plots with vine trees
+setwd(main_path)
 source("trees_plots_save.R")
 
 #### Different bi-copula families  ---------------------------------------------
@@ -297,44 +299,6 @@ source("trees_plots_save.R")
 # Below code investigate criterion scores for various families of pair-copulas in usage
 # NOT RUN!
 # source('vines_copulas_family.R')
-
-##### Sampling from Vines copulas  ---------------------------------------------
-# Sampling will be sensitive on seed, so we define default seed as 123
-set.seed(123)
-model <- 'dvine' # \in c('dvine', 'cvine', 'rvine')
-
-if (model == 'dvine') {
-  model_struc <- vines$dvine
-  vine_name <- 'D-vine'
-} else if (model == 'cvine') {
-  model_struc <- vines$cvine
-  vine_name <- 'C-vine'
-} else if (model == 'rvine') {
-  model_struc <- vines$rvine
-  vine_name <- 'R-vine'
-}
-
-# random generation for the vine copula distribution
-sample_vine <- rvinecop(simn, model_struc)
-sampling_from_vine_copula <- matrix(nrow = simn, 
-                                    ncol = indn)
-
-for (i in 1:indn){
-  sampling_from_vine_copula[,i] <- qt(sample_vine[,i], df = fit_params['df',i])*scale[i] + location[i]
-}
-
-sampling_from_vine_copula <- as.data.frame(sampling_from_vine_copula)
-colnames(sampling_from_vine_copula) <- labels_indexes
-sampling_from_vine_copula %>% 
-  head
-
-# plot correlation matrix
-cor_nm <- "kendall" 
-plot_corr_matrix(sampling_from_vine_copula, cor_nm) + 
-  labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated ', model, ' copula structure'),
-       subtitle = paste0('Marginals come from t distribution'))
-
-cor_mat[[cor_nm]] - cor(sampling_from_vine_copula, method = cor_nm)
 
 #### Generate sample from fitted Vines copulas  --------------------------------
 sim_dvine_123 <- simulate_from_vine_copula(marginals = "t",
@@ -358,11 +322,10 @@ setwd(paste0(main_path,"/outputs/simulations/"))
 simulations <- lapply(list.files(paste0(main_path,"/outputs/simulations/")), function(x) fread(x)) %>%
   setNames(gsub(".csv", "", list.files(paste0(main_path,"/outputs/simulations/"))))
 
+setwd(paste0(main_path,'/figures/correlation/'))
 for (csv in names(simulations)) {
   
   data_sim <- simulations[[csv]]
-  
-  setwd(paste0(main_path,'/figures/correlation/'))
   
   cor_nm <- "spearman"
   jpeg(filename = paste0(cor_nm,"_copula_", csv,".jpeg"),
@@ -370,7 +333,7 @@ for (csv in names(simulations)) {
   
   # plot correlation matrix
   plot_corr_matrix(data_sim[,-"V1"], cor_nm) + 
-    labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated ', str_split(csv, "_")[[1]][1], ' copula'),
+    labs(title = paste0(stringr::str_to_title(cor_nm),' correlation matrix for random sample from calibrated ', str_split(csv, "_")[[1]][1], ' copula'),
          subtitle = paste0('Marginals come from ',final_marginals,' distribution'))
   
   dev.off()

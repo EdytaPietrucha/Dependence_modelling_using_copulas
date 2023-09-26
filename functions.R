@@ -1,3 +1,4 @@
+print("Load necessary functions")
 ################################################################################
 ####  COPULAS CALIBARTION  -----------------------------------------------------
 ################################################################################
@@ -354,7 +355,7 @@ scatter_plot <- function(ind1 = 'DIS',
                          copula_name = "",
                          dot_size = 6) {
   
-  title_nm <- paste0('Scatter plot ', ind1, '~', ind2)
+  title_nm <- paste0('Scatter plot ', ind2, '~', ind1)
   subtitle_nm <- paste0('Simulation from ', copula_name, ' copula') 
     
   plt1 <- ggplot(data = data_real, aes(x = get(ind1), y = get(ind2))) + 
@@ -371,3 +372,4 @@ scatter_plot <- function(ind1 = 'DIS',
   
   return(plt1)
 }
+print("Functions have been loaded")
