@@ -2,17 +2,17 @@
 setwd(paste0(main_path,'/figures/vine_trees/'))
 
 jpeg(filename = "trees_dvine.jpeg",
-     width = 1200, height = 700)
+     width = 700, height = 800)
 plot(vines$dvine, edge_labels = "family_tau", tree = 1:2)
 dev.off()
 
 jpeg(filename = "trees_cvine.jpeg",
-     width = 1200, height = 700)
+     width = 700, height = 800)
 plot(vines$cvine, edge_labels = "family_tau", tree = 1:2)
 dev.off()
 
 jpeg(filename = "trees_rvine.jpeg",
-     width = 1200, height = 700)
+     width = 700, height = 800)
 plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 dev.off()
 

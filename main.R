@@ -19,6 +19,9 @@ indn <- length(labels_indexes)
 
 # Downloading daily variables
 data <- tq_get(x = labels_indexes, from = first_observed_day, to = last_observed_day)
+# write.csv(data, 
+#           paste0("data/ts_data.csv"))
+
 data %>% 
   group_by(symbol) %>% 
   count 
@@ -57,7 +60,7 @@ cor_mat_pt <- list('pearson' = plot_corr_matrix(data_log, 'pearson'),
 plot_hist(data_log)
 
 #### Saving plots  -------------------------------------------------------------
-source('saving_plots.R')
+source('basic_plots_saving.R')
 
 #### Fitting marginal distributions  -------------------------------------------
 # Selected set for distributions:
@@ -185,7 +188,7 @@ sampling_from_copula %>%
   head
 
 # cor_mat$pearson - cor(sampling_from_copula)
-# plot correlation matrix
+# Plot correlation matrix
 cor_nm <- "kendall" 
 plot_corr_matrix(sampling_from_copula, cor_nm) + 
   labs(title = paste0(cor_nm,' correlation matrix for random sample from calibrated t-Student copula'),
@@ -227,7 +230,7 @@ family_bicop <- c('archimedean', 'elliptical')
 # Define criterion for family selection
 criterion_vines <- 'loglik' # criterion_vines
 
-## C-vine structure selection - methodology is based on assumption that main root for each edge
+# C-vine structure selection - methodology is based on assumption that main root for each edge
 # corresponds to index which has the highest value of column sum from Spearman correlation matrix
 correlation_matrix <- cor_mat$spearman
 cvine_struc <- cvine_structure(order(colSums(cor_mat$spearman)))
@@ -237,7 +240,7 @@ cvine_struc <- cvine_structure(order(colSums(cor_mat$spearman)))
 # randomly sets an order of the indexes from the same sector then fit a vine copula and return loglik number 
 
 # DO NOT RUN!
-source('selecting_dvine_structure.R')
+source('dvine_structure_selection.R')
 dvine_struc_all <- fread('outputs/dvine_struc.csv')
 # Select structure with the highest LogLik number & Convert to numeric
 dvine_struc_seq <- dvine_struc_all %>% 
@@ -285,20 +288,20 @@ write.csv(t(as.data.frame(metric_vines)),
           "metrics_vines.csv")
 
 # The best score has been reached for d-vine structure
-# plot first two copula trees
+# Plot first two copula trees
 plot(vines$dvine, edge_labels = "family_tau", tree = 1:2)
 plot(vines$cvine, edge_labels = "family_tau", tree = 1:2)
 plot(vines$rvine, edge_labels = "family_tau", tree = 1:2)
 
 # Saving plots with vine trees
 setwd(main_path)
-source("trees_plots_save.R")
+source("vine_trees_saving.R")
 
 #### Different bi-copula families  ---------------------------------------------
 # Vine structures can use different bi-copula families in calibration. 
 # Below code investigate criterion scores for various families of pair-copulas in usage
 # NOT RUN!
-# source('vines_copulas_family.R')
+# source('vines_bicopula_family_calibration.R')
 
 #### Generate sample from fitted Vines copulas  --------------------------------
 sim_dvine_123 <- simulate_from_vine_copula(marginals = "t",
@@ -358,3 +361,37 @@ scatter_plot(data_real = as.data.frame(pseudo_data),
              data_sim = as.data.frame(pobs(simulations$dvine_seed_123)),
              copula_name = "d-vine",
              dot_size = 2)
+
+#### Correlation differences (real data vs sampled data) -----------------------
+setwd(paste0(main_path, "/figures/correlation/"))
+Mt <- cor_mat$spearman - cor(simulations$t_seed_123[,-"V1"], method = "spearman")
+
+jpeg(filename = "spearman_real_data_vs_t_copula.jpeg",
+     width = 700, height = 700)
+corrplot(Mt, method="color",  
+         type="upper",
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE,
+         mar = c(0, 0, 1, 0),
+         title = "Correlation differences (real data - data sampled from t-Student copula)",
+         number.digits = 3)
+
+dev.off()
+
+jpeg(filename = "spearman_real_data_vs_dvine_copula.jpeg",
+     width = 700, height = 700)
+
+Mdvine <- cor_mat$spearman - cor(simulations$dvine_seed_123[,-"V1"], method = "spearman")
+corrplot(Mdvine, method="color",  
+         type="upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE,          
+         mar = c(0, 0, 1, 0),
+         title = "Correlation differences (real data - data sampled from D-vine copula)",
+         number.digits = 3)
+
+dev.off()
