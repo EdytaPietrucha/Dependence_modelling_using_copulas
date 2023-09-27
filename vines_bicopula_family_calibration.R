@@ -1,4 +1,4 @@
-# searching bicopulas in different sets of copulas families
+#### Calibrate vine copulas for different bicopula families  ------------------- 
 family_cop <- list(all = 'all',
                    parametrics_except_tll = 'parametric',
                    nonparametrics_indep_tll = 'nonparametric',
@@ -56,7 +56,7 @@ criterion_family_rvines <- list('AIC' = sapply(fits_rvine, AIC),
                                 'Log-likelihood' = sapply(fits_rvine, logLik)
 )
 
-#saving results as csv file
+# Saving results as csv file
 setwd(paste0(main_path, '/outputs'))
 
 for (j in c("AIC", "BIC", "Log-likelihood")) {
