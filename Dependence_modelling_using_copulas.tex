@@ -1,0 +1,238 @@
+\documentclass{beamer}
+
+\mode<presentation> {
+\usetheme{Madrid}
+}
+
+\usepackage{graphicx} 
+\usepackage{booktabs} 
+\usepackage[utf8]{inputenc}
+\newtheorem{thm}{Theorem}
+\newtheorem{pf}{Proof}
+\newtheorem{df}{Definition}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%  TITLE PAGE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Dependence modelling using copulas}
+\author{Edyta Pietrucha}
+
+\date{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{frame}
+\titlepage 
+\end{frame}
+
+\begin{frame}{Subject of analysis}
+
+\fontsize{10}{13}\selectfont
+Objective: Modelling dependency structure between stock indexes from three sectors:
+\begin{itemize}
+    \item Information technology: Apple (AAPL), Microsoft (MSFT), Nvidia (NVDA),
+    \item Finance: Citigroup Inc (C), Goldman Sachs Group Inc (GS), JPMorgan Chase \& Co (JPM),
+    \item Services: The Walt Disney Company (DIS), Netflix (NFLX), Amazon.com (AMZN).
+\end{itemize}
+Data: Daily values on close from 2014/08/25 to 2022/08/23. \\
+Metrics: AIC, BIC, Log-likelihood. \\
+Conclusion: 
+\begin{itemize}
+    \item Marginals -- best metrics scores achived for t-Student distribution.
+    \item Joint distribution -- best metrics scores achived for D-vine copula.
+\end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Indexes}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/indexes_lvls.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Spearman correlation matrix}
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/correlation/spearman_matrix.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Histogram of logarithmic increments}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/histogram_indexes.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{AIC for fitted marginals}
+
+\centering
+\begin{table}
+\input{output/AIC_marginals.tex}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{BIC for fitted marginals}
+
+\centering
+\begin{table}
+\input{output/BIC_marginals.tex}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Log-likelihood for fitted marginals}
+
+\centering
+\begin{table}
+\input{output/Log-likelihood_marginals}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Fitted marginals (Finance)}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/marginals/financials_comapnies.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Fitted marginals (IT)}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/marginals/IT_comapnies.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Fitted marginals (Services)}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/marginals/services_comapnies.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Elliptical \& Archimedean copulas}
+
+\centering
+\begin{table}
+\input{output/metrics_elliptical_archimedean}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Spearman matrix for fitted t-Student copula}
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/correlation/spearman_copula_t_seed_123.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Spearman matrix real data vs data sampled from t-Student}
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=0.7\textwidth]{figures/correlation/spearman_real_data_vs_t_copula.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Vines copulas}
+
+\centering
+\begin{table}
+\input{output/metrics_vines}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Results for different D-vine structures}
+
+\centering
+\begin{table}
+\input{output/dvine_struc}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Vines trees (C-vine, D-vine, R-vine)}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=\textwidth]{figures/vine_trees/vine_trees.jpg}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Spearman matrix for fitted D-vine}
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/correlation/spearman_copula_dvine_seed_123.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Spearman matrix real data vs data sampled from D-vine}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=0.7\textwidth]{figures/correlation/spearman_real_data_vs_dvine_copula.jpeg}
+\end{figure}
+    
+\end{frame}
+
+\begin{frame}{Log-likelihood for different bicopula families}
+
+\centering
+\begin{table}
+\input{output/Log-likelihood_for_varius_bicopulas_families}   
+\end{table}
+
+\end{frame}
+
+\begin{frame}{Scatter plot $GS \sim DIS$ (D-vine)}
+
+\centering
+\begin{figure}[!h]
+  \centering
+    \includegraphics[width=1\textwidth]{figures/GS_vs_DIS/GS_vs_DIS_dvine.jpeg}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Scatter plots $GS \sim DIS$}
+
+\begin{figure}%
+    \centering
+    {{\includegraphics[width=5.3cm]{figures/GS_vs_DIS/GS_vs_DIS_t.jpeg} }}%
+    \qquad
+    {{\includegraphics[width=5.3cm]{figures/GS_vs_DIS/GS_vs_DIS_normal.jpeg} }} 
+        \centering
+    {{\includegraphics[width=5.3cm]{figures/GS_vs_DIS/GS_vs_DIS_cvine.jpeg} }}%
+    \qquad
+    {{\includegraphics[width=5.3cm]{figures/GS_vs_DIS/GS_vs_DIS_rvine.jpeg} }} 
+\end{figure} 
+    
+\end{frame}
+
+\end{document}
